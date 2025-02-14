@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MarsRoverAPI.Models;
 using MarsRoverAPI.Services;
+using MarsRoverAPI.Models.Exceptions;
 
 namespace MarsRoverAPI.Controllers
 {
@@ -28,48 +29,53 @@ namespace MarsRoverAPI.Controllers
         [HttpPost("command")]
         public IActionResult Command([FromBody] char[] commands)
         {
+            int statusCode = 200;
+            string errorMessage = string.Empty;
+
             if (commands == null || commands.Length == 0)
                 return BadRequest("No command received in the request.");
 
             if (!_commandService.ValidateCommands(commands))
                 return BadRequest("Unknown commands were found, the request was cancelled.");
 
-            _rover.ResetObstacleFlag();
-
-            foreach (char command in commands)
+            try
             {
-                switch (command)
+                foreach (char command in commands)
                 {
-                    case 'f':
-                    case 'F':
-                        _rover.MoveForward(1);
-                        break;
-                    case 'b':
-                    case 'B':
-                        _rover.MoveBackward(1);
-                        break;
-                    case 'l':
-                    case 'L':
-                        _rover.TurnLeft();
-                        break;
-                    case 'r':
-                    case 'R':
-                        _rover.TurnRight();
-                        break;
+                    switch (char.ToLower(command))
+                    {
+                        case 'f':
+                            _rover.MoveForward(1);
+                            break;
+                        case 'b':
+                            _rover.MoveBackward(1);
+                            break;
+                        case 'l':
+                            _rover.TurnLeft();
+                            break;
+                        case 'r':
+                            _rover.TurnRight();
+                            break;
+                    }
                 }
 
-                if (_rover.ObstacleEncountered)
-                    break;
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+            catch (ObstacleEncounteredException ex)
+            {
+                statusCode = 409;
+                errorMessage = ex.Message;
             }
 
             var roverPosition = _rover.GetPosition();
             var roverDirection = _rover.GetFacingDirection();
 
             string header = $"Direction: {roverDirection}, Position: ({roverPosition.X}, {roverPosition.Y})";
-            if (_rover.ObstacleEncountered)
-                header += "\n⚠️ Obstacle encountered!";
 
-            return Ok(header + Environment.NewLine + _grid.DrawGrid(roverPosition));
+            return StatusCode(statusCode, header + Environment.NewLine + errorMessage + Environment.NewLine + _grid.DrawGrid(roverPosition));
         }
     }
 }

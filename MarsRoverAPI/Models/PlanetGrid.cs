@@ -11,16 +11,14 @@ namespace MarsRoverAPI.Models
         public int Height { get; }
         public List<Position> Obstacles { get; }
 
-        public PlanetGrid(int width, int height, int numberOfObstacles = 0)
+        public PlanetGrid(int width, int height, List<Position> obstacles)
         {
-            if (width <= 0)
-                throw new ArgumentException("Width must be greater than zero.", nameof(width));
-            if (height <= 0)
-                throw new ArgumentException("Height must be greater than zero.", nameof(height));
+            if (width <= 0 || height <= 0)
+                throw new ArgumentException($"Invalid grid dimensions: width must be greater than zero and height must be greater than zero. Received: width={width}, height={height}");
 
             Width = width;
             Height = height;
-            Obstacles = GenerateObstacles(numberOfObstacles);
+            Obstacles = obstacles;
         }
 
         /// <summary>
@@ -47,24 +45,6 @@ namespace MarsRoverAPI.Models
         public bool IsObstacleAt(Position position)
         {
             return Obstacles.Any(o => o.X == position.X && o.Y == position.Y);
-        }
-
-        /// <summary>
-        /// Generates a list of random obstacles within the grid.
-        /// </summary>
-        /// <param name="count">The number of obstacles to generate.</param>
-        /// <returns>A list of <see cref="Position"/> objects representing obstacles.</returns>
-        private List<Position> GenerateObstacles(int count)
-        {
-            var obstacles = new List<Position>();
-            var random = new Random();
-            for (int i = 0; i < count; i++)
-            {
-                int x = random.Next(0, Width);
-                int y = random.Next(0, Height);
-                obstacles.Add(new Position(x, y));
-            }
-            return obstacles;
         }
 
         /// <summary>

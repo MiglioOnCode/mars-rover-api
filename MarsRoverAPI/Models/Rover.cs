@@ -1,49 +1,39 @@
-﻿namespace MarsRoverAPI.Models
+﻿using MarsRoverAPI.Models.Exceptions;
+using MarsRoverAPI.Services;
+
+namespace MarsRoverAPI.Models
 {
     /// <summary>
     /// Represents a Mars rover that can move within a grid, turn, and detect obstacles.
     /// </summary>
-    public class Rover(Position position, Direction facingDirection, PlanetGrid grid)
+    public class Rover
     {
-        private Position _position = position;
-        private Direction _facingDirection = facingDirection;
-        private readonly PlanetGrid _grid = grid;
+        private Position _position;
+        private Direction _facingDirection;
+        private readonly PlanetGrid _grid;
 
-        public bool ObstacleEncountered { get; private set; } = false;
-        public void ResetObstacleFlag() => ObstacleEncountered = false;
+        public Rover(Position position, Direction facingDirection, PlanetGrid grid)
+        {
+            if (position.X < 0 || position.Y < 0 || position.X > grid.Width || position.Y > grid.Height)
+                throw new ArgumentException($"Invalid starting position: ({position.X}, {position.Y}) exceeds grid boundaries (0-{grid.Width - 1}, 0-{grid.Height - 1}).");
+
+            _position = position;
+            _facingDirection = facingDirection;
+            _grid = grid;
+        }
 
         public Position GetPosition() => _position;
         public Direction GetFacingDirection() => _facingDirection;
 
         /// <summary>
-        /// Rotates the rover 90 degrees to the right.
+        /// Rotates the rover to the next direction to the right.
         /// </summary>
-        public void TurnRight()
-        {
-            _facingDirection = _facingDirection switch
-            {
-                Direction.North => Direction.East,
-                Direction.East => Direction.South,
-                Direction.South => Direction.West,
-                Direction.West => Direction.North,
-                _ => throw new InvalidOperationException("Invalid direction."),
-            };
-        }
+        public void TurnRight() => _facingDirection = _facingDirection.TurnRight();
 
         /// <summary>
-        /// Rotates the rover 90 degrees to the left.
+        /// Rotates the rover to the next direction to the left.
         /// </summary>
-        public void TurnLeft()
-        {
-            _facingDirection = _facingDirection switch
-            {
-                Direction.North => Direction.West,
-                Direction.West => Direction.South,
-                Direction.South => Direction.East,
-                Direction.East => Direction.North,
-                _ => throw new InvalidOperationException("Invalid direction."),
-            };
-        }
+        public void TurnLeft() => _facingDirection = _facingDirection.TurnLeft();
 
         /// <summary>
         /// Moves the rover forward by the specified number of steps.
@@ -83,8 +73,7 @@
 
                 if (_grid.IsObstacleAt(nextPosition))
                 {
-                    ObstacleEncountered = true;
-                    break;
+                    throw new ObstacleEncounteredException("Obstacle encountered!");
                 }
 
                 _position = nextPosition;

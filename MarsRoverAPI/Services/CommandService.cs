@@ -5,6 +5,8 @@
     /// </summary>
     public class CommandService
     {
+        private static readonly char[] commandsList = ['f', 'b', 'l', 'r'];
+
         /// <summary>
         /// Validates that all characters in the provided array are valid commands.
         /// Valid commands are: 'f' (forward), 'b' (backward), 'l' (left), and 'r' (right).
@@ -15,7 +17,7 @@
         /// </returns>
         public bool ValidateCommands(char[] commands)
         {
-            return commands.All(c => c == 'f' || c == 'b' || c == 'l' || c == 'r');
+            return commands.All(c => commandsList.Contains(char.ToLower(c)));
         }
     }
 }
